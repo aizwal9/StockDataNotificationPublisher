@@ -1,15 +1,19 @@
-package com.processor.analytics;
+package com.processor.analytics.controller;
 
-import io.github.mainstringargs.alphavantagescraper.output.quote.StockQuotesResponse;
+import com.crazzyghost.alphavantage.timeseries.response.TimeSeriesResponse;
+import com.processor.analytics.VantageService;
 import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/stock")
-public class StockDataController {
+public class VantageStockController {
 
     @Value("${alpha.vantage.api.key}")
     private String apiKey;
@@ -22,7 +26,8 @@ public class StockDataController {
     private VantageService vantageService;
 
     @GetMapping("/list")
-    public List<StockQuotesResponse> getStockData(@RequestBody List<String> symbols) {
+    public List<TimeSeriesResponse> getStockData(@RequestBody List<String> symbols) {
         return vantageService.getSingleStockData(symbols,apiKey,connectionString,databaseName);
     }
+
 }

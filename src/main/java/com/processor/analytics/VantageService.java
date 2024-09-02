@@ -1,18 +1,24 @@
 package com.processor.analytics;
 
+import com.crazzyghost.alphavantage.AlphaVantage;
+import com.crazzyghost.alphavantage.Config;
+import com.crazzyghost.alphavantage.parameters.DataType;
+import com.crazzyghost.alphavantage.parameters.OutputSize;
+import com.crazzyghost.alphavantage.timeseries.response.StockUnit;
+import com.crazzyghost.alphavantage.timeseries.response.TimeSeriesResponse;
 import com.mongodb.client.MongoDatabase;
-import io.github.mainstringargs.alphavantagescraper.AlphaVantageConnector;
-import io.github.mainstringargs.alphavantagescraper.StockQuotes;
-import io.github.mainstringargs.alphavantagescraper.output.AlphaVantageException;
-import io.github.mainstringargs.alphavantagescraper.output.quote.StockQuotesResponse;
-import io.github.mainstringargs.alphavantagescraper.output.quote.data.StockQuote;
+import com.processor.analytics.util.StockUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+
+import static com.processor.analytics.util.Constants.STOCK_QUOTE;
+import static com.processor.analytics.util.Constants.STOCK_UNITS;
 
 @Component
 @Slf4j
@@ -20,29 +26,44 @@ public class VantageService {
 
     @Resource
     private MongoDao mongoDao;
-    private static final String STOCK_QUOTE = "StockQuote";
+    @Resource
+    private DataFormatter dataFormatter;
+    @Resource
+    private StockUtils stockUtils;
+
+    private static final int TIMEOUT = 100;
 
 
-    public List<StockQuotesResponse> getSingleStockData(List<String> symbols, String apiKey, String connectionString, String databaseName) {
-        int timeout = 3000;
-        AlphaVantageConnector apiConnector = new AlphaVantageConnector(apiKey, timeout);
-        StockQuotes stockQuotes = new StockQuotes(apiConnector);
+    public List<TimeSeriesResponse> getSingleStockData(List<String> symbols, String apiKey, String connectionString, String databaseName) {
         MongoDatabase mongoDatabase = MongoClientInitlizer.getInstance(connectionString).getDatabase(databaseName);
-        List<StockQuotesResponse> responseList = new ArrayList<>();
-        try {
-            log.info("Stock: {}", symbols);
-            symbols.forEach(symbol -> {
-                StockQuotesResponse response = stockQuotes.quote(symbol);
-                StockQuote stock = response.getStockQuote();
-                mongoDao.storeStockQuote(mongoDatabase, stock, STOCK_QUOTE);
-                log.info("Date: {} Price: {}", stock.getLatestTradingDay(), stock.getPrice());
-                responseList.add(response);
-            });
-            return responseList;
-        } catch (AlphaVantageException e) {
-            log.error("something went wrong");
-            return Collections.emptyList();
-        }
+        List<TimeSeriesResponse> timeSeriesResponses = new ArrayList<>();
+        Config config = Config.builder()
+                .key(apiKey)
+                .timeOut(TIMEOUT)
+                .build();
+
+        AlphaVantage.api().init(config);
+
+        symbols.forEach(symbol -> {
+            TimeSeriesResponse response = AlphaVantage.api()
+                    .timeSeries()
+                    .daily()
+                    .forSymbol(symbol)
+                    .outputSize(OutputSize.FULL)
+                    .dataType(DataType.JSON)
+                    .fetchSync();
+            mongoDao.storeStockQuote(mongoDatabase, dataFormatter.formatTimeSeriesResponse(response), STOCK_QUOTE.value);
+            timeSeriesResponses.add(response);
+        });
+
+        return timeSeriesResponses;
+    }
+
+    public void monitorStocks(String symbol, String connectionString, String databaseName) {
+        MongoDatabase mongoDatabase = MongoClientInitlizer.getInstance(connectionString).getDatabase(databaseName);
+        Document query = new Document("symbol", symbol);
+        List<StockUnit> stockUnits = mongoDatabase.getCollection(STOCK_QUOTE.value).find(query).first().get(STOCK_UNITS.value, List.class);
+        log.info(stockUnits.toString());
     }
 
 }
