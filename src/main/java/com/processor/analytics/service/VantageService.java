@@ -1,4 +1,4 @@
-package com.processor.analytics;
+package com.processor.analytics.service;
 
 import com.crazzyghost.alphavantage.AlphaVantage;
 import com.crazzyghost.alphavantage.Config;
@@ -7,14 +7,16 @@ import com.crazzyghost.alphavantage.parameters.OutputSize;
 import com.crazzyghost.alphavantage.timeseries.response.StockUnit;
 import com.crazzyghost.alphavantage.timeseries.response.TimeSeriesResponse;
 import com.mongodb.client.MongoDatabase;
-import com.processor.analytics.util.StockUtils;
+import com.processor.analytics.DataFormatter;
+import com.processor.analytics.MongoClientInitlizer;
+import com.processor.analytics.MongoDao;
+import com.processor.analytics.models.TimeSeriesResponseStock;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
-import org.bson.conversions.Bson;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static com.processor.analytics.util.Constants.STOCK_QUOTE;
@@ -29,14 +31,14 @@ public class VantageService {
     @Resource
     private DataFormatter dataFormatter;
     @Resource
-    private StockUtils stockUtils;
+    private TimeSeriesStockService timeSeriesStockService;
 
+    @Value("${alpha.vantage.api.key}")
+    private String apiKey;
     private static final int TIMEOUT = 100;
 
 
-    public List<TimeSeriesResponse> getSingleStockData(List<String> symbols, String apiKey, String connectionString, String databaseName) {
-        MongoDatabase mongoDatabase = MongoClientInitlizer.getInstance(connectionString).getDatabase(databaseName);
-        List<TimeSeriesResponse> timeSeriesResponses = new ArrayList<>();
+    public TimeSeriesResponseStock getSingleStockData(String symbol) {
         Config config = Config.builder()
                 .key(apiKey)
                 .timeOut(TIMEOUT)
@@ -44,19 +46,14 @@ public class VantageService {
 
         AlphaVantage.api().init(config);
 
-        symbols.forEach(symbol -> {
-            TimeSeriesResponse response = AlphaVantage.api()
-                    .timeSeries()
-                    .daily()
-                    .forSymbol(symbol)
-                    .outputSize(OutputSize.FULL)
-                    .dataType(DataType.JSON)
-                    .fetchSync();
-            mongoDao.storeStockQuote(mongoDatabase, dataFormatter.formatTimeSeriesResponse(response), STOCK_QUOTE.value);
-            timeSeriesResponses.add(response);
-        });
-
-        return timeSeriesResponses;
+        TimeSeriesResponse response = AlphaVantage.api()
+                .timeSeries()
+                .daily()
+                .forSymbol(symbol)
+                .outputSize(OutputSize.FULL)
+                .dataType(DataType.JSON)
+                .fetchSync();
+        return timeSeriesStockService.save(dataFormatter.formatTimeSeriesResponse(response));
     }
 
     public void monitorStocks(String symbol, String connectionString, String databaseName) {
