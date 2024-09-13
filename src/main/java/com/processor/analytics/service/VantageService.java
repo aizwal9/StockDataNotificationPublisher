@@ -10,6 +10,7 @@ import com.mongodb.client.MongoDatabase;
 import com.processor.analytics.DataFormatter;
 import com.processor.analytics.MongoClientInitlizer;
 import com.processor.analytics.MongoDao;
+import com.processor.analytics.models.IntraDayStockQuote;
 import com.processor.analytics.models.TimeSeriesResponseStock;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+import static com.crazzyghost.alphavantage.parameters.Interval.SIXTY_MIN;
 import static com.processor.analytics.util.Constants.STOCK_QUOTE;
 import static com.processor.analytics.util.Constants.STOCK_UNITS;
 
@@ -35,10 +37,29 @@ public class VantageService {
 
     @Value("${alpha.vantage.api.key}")
     private String apiKey;
-    private static final int TIMEOUT = 100;
+    private static final int TIMEOUT = 1000;
 
 
-    public TimeSeriesResponseStock getSingleStockData(String symbol) {
+    public IntraDayStockQuote getIntradayStockData(String symbol) {
+        Config config = Config.builder()
+                .key(apiKey)
+                .timeOut(TIMEOUT)
+                .build();
+
+        AlphaVantage.api().init(config);
+
+        TimeSeriesResponse response = AlphaVantage.api()
+                .timeSeries()
+                .intraday()
+                .interval(SIXTY_MIN)
+                .forSymbol(symbol)
+                .outputSize(OutputSize.FULL)
+                .dataType(DataType.JSON)
+                .fetchSync();
+        return timeSeriesStockService.saveIntra(dataFormatter.formatIntradayTimeSeriesResponse(response));
+    }
+
+    public TimeSeriesResponseStock getDailyStockData(String symbol) {
         Config config = Config.builder()
                 .key(apiKey)
                 .timeOut(TIMEOUT)
@@ -53,8 +74,9 @@ public class VantageService {
                 .outputSize(OutputSize.FULL)
                 .dataType(DataType.JSON)
                 .fetchSync();
-        return timeSeriesStockService.save(dataFormatter.formatTimeSeriesResponse(response));
+        return timeSeriesStockService.saveDaily(dataFormatter.formatTimeSeriesResponse(response));
     }
+
 
     public void monitorStocks(String symbol, String connectionString, String databaseName) {
         MongoDatabase mongoDatabase = MongoClientInitlizer.getInstance(connectionString).getDatabase(databaseName);

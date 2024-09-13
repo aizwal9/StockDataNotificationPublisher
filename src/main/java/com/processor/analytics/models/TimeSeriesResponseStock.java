@@ -1,25 +1,23 @@
 package com.processor.analytics.models;
 
-import com.crazzyghost.alphavantage.timeseries.response.StockUnit;
 import lombok.Builder;
 import lombok.Data;
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 
 import java.util.List;
 
 @Data
 @Builder
-@Document(collection = "StockQuote")
+@Document(collection = "DailyStockQuote")
 public class TimeSeriesResponseStock {
     @Id
-    private String id;
+    private ObjectId id;
     @Indexed(unique = true)
-    @Field("symbol")
     private String symbol;
     private String lastRefreshed;
-    private List<StockUnit> stockUnits;
 
+    private List<CustomStockUnit> stockUnits;
 }

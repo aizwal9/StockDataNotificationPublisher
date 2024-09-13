@@ -7,14 +7,17 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Data
+import java.util.List;
+
+@Document(collection = "IntraDayStockQuote")
 @Builder
-@Document(collection = "BookmarkStock")
-public class BookmarkStock {
+@Data
+public class IntraDayStockQuote {
     @Id
     private ObjectId id;
     @Indexed(unique = true)
-    private String stock;
-    private String operator;
-    private Integer amount;
+    private String symbol;
+    private String lastRefreshed;
+
+    private List<CustomStockUnit> stockUnits;
 }

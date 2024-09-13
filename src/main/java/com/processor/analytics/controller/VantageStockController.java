@@ -1,5 +1,6 @@
 package com.processor.analytics.controller;
 
+import com.processor.analytics.models.IntraDayStockQuote;
 import com.processor.analytics.models.TimeSeriesResponseStock;
 import com.processor.analytics.service.VantageService;
 import jakarta.annotation.Resource;
@@ -15,9 +16,14 @@ public class VantageStockController {
     @Resource
     private VantageService vantageService;
 
-    @GetMapping("/{symbol}")
-    public TimeSeriesResponseStock getStockData(@PathVariable(name = "symbol") String symbol) {
-        return vantageService.getSingleStockData(symbol);
+    @GetMapping("/daily/{symbol}")
+    public TimeSeriesResponseStock getDailyStockData(@PathVariable(name = "symbol") String symbol) {
+        return vantageService.getDailyStockData(symbol);
+    }
+
+    @GetMapping("/intra/{symbol}")
+    public IntraDayStockQuote getIntraStockData(@PathVariable(name = "symbol") String symbol) {
+        return vantageService.getIntradayStockData(symbol);
     }
 
 }
