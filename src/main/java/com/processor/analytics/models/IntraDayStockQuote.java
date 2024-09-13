@@ -9,10 +9,10 @@ import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 
-@Data
+@Document(collection = "IntraDayStockQuote")
 @Builder
-@Document(collection = "DailyStockQuote")
-public class TimeSeriesResponseStock {
+@Data
+public class IntraDayStockQuote {
     @Id
     private ObjectId id;
     @Indexed(unique = true)
