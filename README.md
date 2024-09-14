@@ -1,12 +1,12 @@
-##Stock Market Tracker
+# Stock Market Tracker
 A real-time stock market tracking application built with Spring Boot, React, and GCP Pub/Sub. The application allows users to view stock data and visualizations, bookmark stocks, and receive desktop notifications when bookmarked stocks reach set benchmarks.
-#Features:
+## Features:
 - Real-time stock data ingestion and storage in MongoDB
 - Visualizations using React and Chart.js
 - Desktop notifications for bookmarked stocks using GCP Pub/Sub
 - Integration with external APIs for latest data
 
-#Architecture:
+## Architecture:
 The architecture diagram (above) shows the components and interactions of the application, including:
 - Spring Boot API for data ingestion and storage
 - MongoDB for storing raw stock data
@@ -15,7 +15,7 @@ The architecture diagram (above) shows the components and interactions of the ap
 - Vantage Service for fetching latest data
 - Notification Service for desktop notifications
 
-#Technologies:
+## Technologies:
 - Java, Spring Boot
 - React, recharts
 - MongoDB
