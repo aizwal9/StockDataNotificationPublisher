@@ -9,17 +9,20 @@ Person(user, "User", "Views stock data and visualizations")
 
 System_Boundary(c1, "Stock Market Tracker") {
 Container(api, "Spring Boot API", "Ingests data, stores raw data in MongoDB", "Java, Spring Boot")
-ContainerDb(raw_db, "MongoDB (Raw)", "Stores raw stock data", "Database", "MongoDB")
-Container(dataflow, "GCP Dataflow", "Processes and transforms data", "Apache Beam")
-ContainerDb(processed_db, "MongoDB (Processed)", "Stores processed stock data", "Database", "MongoDB")
+ContainerDb(raw_db, "MongoDB", "Stores stock data", "Database", "MongoDB")
+Container(gcp, "GCP PubSub", "Sends and receive message", "Pub Sub")
 Container(dashboard, "Dashboard (Frontend)", "Visualizes stock data", "React, Chart.js")
+Container(Vantage,"Vantage Service","Fetch latest Data","External API")
+Container(Notifier,"Notification Service","Desktop Popup published msg","Subscriber")
 }
 
-Rel(user, api, "Accesses data and visualizations", "HTTP")
-Rel(api, raw_db, "Stores raw data", "MongoDB Driver")
-Rel(api, dataflow, "Sends data for processing", "Kafka/RabbitMQ")
-Rel(dataflow, processed_db, "Stores processed data", "MongoDB Driver")
-Rel(dashboard, processed_db, "Queries data", "MongoDB Driver")
-
+Rel(user, dashboard, "Accesses data,bookmarking stock and visualizations", "HTTP")
+Rel(dashboard, api, "Queries data")
+Rel(api, dashboard, "Receives data")
+Rel(api,Vantage,"Queries latest data","Vantage api")
+Rel(Vantage,api,"Receive latest data")
+Rel(api, raw_db, "Stores vantage data", "MongoDB Driver")
+Rel(api, gcp, "Sends notification for bookmark stock", "Publisher")
+Rel(gcp, Notifier, "Receive Published Msg", "Subscriber")
 @enduml
 .....

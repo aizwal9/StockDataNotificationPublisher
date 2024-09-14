@@ -1,0 +1,13 @@
+@startuml
+actor User
+participant React_Dashboard
+participant GCP_Pub_Sub
+participant Backend
+participant Notifier
+
+User -> React_Dashboard : Add/Remove Bookmark
+React_Dashboard -> Backend : Persist Bookmark in DB
+Backend -> GCP_Pub_Sub : Publish message
+GCP_Pub_Sub -> Notifier : Consume Message
+Notifier -> User : Display Notification
+@enduml
