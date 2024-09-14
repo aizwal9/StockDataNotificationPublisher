@@ -9,12 +9,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping(value = "/api/v1/bookmark")
+@CrossOrigin(origins = "http://127.0.0.1:5173")
 public class BookmarkController {
 
     @Resource
     private BookmarkRepository bookmarkRepository;
 
-    @GetMapping("/add")
+    @PostMapping("/add")
     public BookmarkStock addBookmark(@RequestBody BookmarkStock bookmarkStock) {
         BookmarkStock existingBookmarkStock = bookmarkRepository.findByStock(bookmarkStock.getStock());
         if (existingBookmarkStock != null) {
@@ -25,7 +26,7 @@ public class BookmarkController {
         }
     }
 
-    @PostMapping(value = "/remove/{symbol}")
+    @DeleteMapping(value = "/remove/{symbol}")
     public void removeBookmark(@PathVariable(name = "symbol") String symbol) {
         bookmarkRepository.deleteBookmarkStockByStock(symbol);
     }

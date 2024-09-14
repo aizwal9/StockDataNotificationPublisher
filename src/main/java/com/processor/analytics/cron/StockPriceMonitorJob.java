@@ -3,7 +3,6 @@ package com.processor.analytics.cron;
 import com.google.cloud.pubsub.v1.Publisher;
 import com.google.protobuf.ByteString;
 import com.google.pubsub.v1.PubsubMessage;
-import com.processor.analytics.service.VantageService;
 import com.processor.analytics.models.BookmarkStock;
 import com.processor.analytics.service.BookmarkStocksService;
 import jakarta.annotation.Resource;
@@ -19,7 +18,7 @@ import java.util.List;
 public class StockPriceMonitorJob implements Job {
 
     @Resource
-    private VantageService vantageService;
+    private StockPriceMonitor stockPriceMonitor;
     @Resource
     private Publisher publisher;
     @Resource
@@ -29,19 +28,15 @@ public class StockPriceMonitorJob implements Job {
     public void execute(JobExecutionContext context) {
         List<BookmarkStock> bookmarkedStocks = bookmarkStocksService.getAll();
         for (BookmarkStock bookmarkStock : bookmarkedStocks) {
-            sendNotification(bookmarkStock.getStock(), 100, 90);
-//            vantageService.monitorStocks(stockSymbol);
+            if (stockPriceMonitor.monitorStock(bookmarkStock)) {
+                sendNotification(bookmarkStock);
+            }
         }
     }
 
-    private void sendNotification(String stockSymbol, double currentPrice, double yesterdayPrice) {
-        String message = String.format(
-                "Stock alert: %s price dropped by %.2f%% (current : %.2f, yesterday %.2f)",
-                stockSymbol,
-                (yesterdayPrice - currentPrice) / yesterdayPrice * 100,
-                currentPrice,
-                yesterdayPrice
-        );
+    private void sendNotification(BookmarkStock bookmarkStock) {
+
+        String message = getMessageFormat(bookmarkStock);
         log.info("Send notification");
 
         PubsubMessage pubsubMessage = PubsubMessage.newBuilder()
@@ -49,5 +44,16 @@ public class StockPriceMonitorJob implements Job {
                 .build();
 
         publisher.publish(pubsubMessage);
+    }
+
+    private String getMessageFormat(BookmarkStock bookmarkStock) {
+        return switch (bookmarkStock.getOperator()) {
+            case ">" ->
+                    String.format("%s price is greater than %.2f", bookmarkStock.getStock(), bookmarkStock.getAmount());
+            case "=" -> String.format("%s price is equal to %.2f", bookmarkStock.getStock(), bookmarkStock.getAmount());
+            case "<" ->
+                    String.format("%s price is less than %.2f", bookmarkStock.getStock(), bookmarkStock.getAmount());
+            default -> "";
+        };
     }
 }

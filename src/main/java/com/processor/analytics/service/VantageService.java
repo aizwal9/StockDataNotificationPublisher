@@ -4,32 +4,21 @@ import com.crazzyghost.alphavantage.AlphaVantage;
 import com.crazzyghost.alphavantage.Config;
 import com.crazzyghost.alphavantage.parameters.DataType;
 import com.crazzyghost.alphavantage.parameters.OutputSize;
-import com.crazzyghost.alphavantage.timeseries.response.StockUnit;
 import com.crazzyghost.alphavantage.timeseries.response.TimeSeriesResponse;
-import com.mongodb.client.MongoDatabase;
 import com.processor.analytics.DataFormatter;
-import com.processor.analytics.MongoClientInitlizer;
-import com.processor.analytics.MongoDao;
 import com.processor.analytics.models.IntraDayStockQuote;
 import com.processor.analytics.models.TimeSeriesResponseStock;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.Document;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-
 import static com.crazzyghost.alphavantage.parameters.Interval.SIXTY_MIN;
-import static com.processor.analytics.util.Constants.STOCK_QUOTE;
-import static com.processor.analytics.util.Constants.STOCK_UNITS;
 
 @Component
 @Slf4j
 public class VantageService {
 
-    @Resource
-    private MongoDao mongoDao;
     @Resource
     private DataFormatter dataFormatter;
     @Resource
@@ -75,14 +64,6 @@ public class VantageService {
                 .dataType(DataType.JSON)
                 .fetchSync();
         return timeSeriesStockService.saveDaily(dataFormatter.formatTimeSeriesResponse(response));
-    }
-
-
-    public void monitorStocks(String symbol, String connectionString, String databaseName) {
-        MongoDatabase mongoDatabase = MongoClientInitlizer.getInstance(connectionString).getDatabase(databaseName);
-        Document query = new Document("symbol", symbol);
-        List<StockUnit> stockUnits = mongoDatabase.getCollection(STOCK_QUOTE.value).find(query).first().get(STOCK_UNITS.value, List.class);
-        log.info(stockUnits.toString());
     }
 
 }

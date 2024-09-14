@@ -16,5 +16,5 @@ public class BookmarkStock {
     @Indexed(unique = true)
     private String stock;
     private String operator;
-    private Integer amount;
+    private Double amount;
 }
