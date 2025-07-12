@@ -19,7 +19,7 @@ public class TimeSeriesStockService {
     private IntraDayStockQuoteRepository intradayTimeSeriesResponseStockRepository;
 
     public TimeSeriesResponseStock findOneDaily(String symbol) {
-        return dailyTimeSeriesResponseStockRepository.findBySymbol(symbol);
+        return dailyTimeSeriesResponseStockRepository.findTopBySymbolOrderByLastRefreshedDesc(symbol);
     }
 
     public IntraDayStockQuote findOneIntra(String symbol) {

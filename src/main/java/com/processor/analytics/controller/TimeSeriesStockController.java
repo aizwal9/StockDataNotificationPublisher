@@ -7,11 +7,12 @@ import com.processor.analytics.service.VantageService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/stock")
-@CrossOrigin(origins = "http://127.0.0.1:5173")
+@CrossOrigin(origins = "http://localhost:5173")
 public class TimeSeriesStockController {
 
     @Resource
@@ -21,7 +22,13 @@ public class TimeSeriesStockController {
 
     @GetMapping("/daily/{symbol}")
     public TimeSeriesResponseStock getStockData(@PathVariable(name = "symbol") String symbol) {
-        return Optional.ofNullable(timeSeriesStockService.findOneDaily(symbol)).orElseGet(() -> vantageService.getDailyStockData(symbol));
+        TimeSeriesResponseStock response = timeSeriesStockService.findOneDaily(symbol);
+        if (response != null && response.getLastRefreshed() != null &&
+               LocalDate.parse(response.getLastRefreshed()).isAfter(LocalDate.now().minusWeeks(1))) {
+            return response;
+        } else {
+            return vantageService.getDailyStockData(symbol);
+        }
     }
 
     @GetMapping("/intra/{symbol}")

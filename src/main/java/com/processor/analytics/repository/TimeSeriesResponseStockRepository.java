@@ -10,4 +10,5 @@ import org.springframework.stereotype.Repository;
 @Document(collection = "DailyStockQuote")
 public interface TimeSeriesResponseStockRepository extends MongoRepository<TimeSeriesResponseStock, String> {
     TimeSeriesResponseStock findBySymbol(@Param("symbol") String symbol);
+    TimeSeriesResponseStock findTopBySymbolOrderByLastRefreshedDesc(@Param("symbol") String symbol);
 }
